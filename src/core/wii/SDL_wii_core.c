@@ -21,8 +21,6 @@
 
 #include "../../SDL_internal.h"
 
-#ifdef __wii__
-
 #include "SDL_main.h"
 
 #include "../../video/ogc/SDL_ogcevents_c.h"
@@ -41,29 +39,45 @@
 #include <wiikeyboard/keyboard.h>
 #include <wiiuse/wpad.h>
 
-int main(int argc, char *argv[])
+/* moved this stuff out of SDL_main, since it shouldn't be there
+ * (SDL should be able to run perfectly fine without a SDLmain.
+ *  this is even clarified in the docs!) */
+
+static void WII_ShutdownCB(void)
 {
-    u32 version;
-    s32 preferred;
-
-    /* These are better suited for SDLmain  --paper */
-    L2Enhance();
-    version = IOS_GetVersion();
-    preferred = IOS_GetPreferredVersion();
-
-    if (preferred > 0 && version != (u32)preferred)
-        IOS_ReloadIOS(preferred);
-
-    /* Call the user's main function. Make sure that argv contains at least one
-     * element. (BannerBomb gives a NULL argv) */
-    if (!argv || argv[0] == NULL) {
-        static const char *dummy_argv[2] = { "app", NULL };
-        argc = 1;
-        argv = (char**)dummy_argv;
-    }
-    return SDL_main(argc, argv);
+    OGC_PowerOffRequested = true;
 }
 
-#endif /* __wii__ */
+static void WII_ResetCB(void)
+{
+    OGC_ResetRequested = true;
+}
 
-/* vi: set sts=4 ts=4 sw=4 expandtab: */
+void WII_Init(void)
+{
+    /* make sure the contents of this function are only called once
+     *
+     * Ideally this stuff would be called only when it is actually
+     * necessary (e.g. mouse & keyboard are unnecessary for users
+     * who only need the audio portion of SDL) but this is OK for
+     * now. */
+    static int init = 0;
+    if (init) return;
+    init = 1;
+
+    // Wii Power/Reset buttons
+    WPAD_Init();
+    WPAD_SetPowerButtonCallback((WPADShutdownCallback)WII_ShutdownCB);
+    SYS_SetPowerCallback(WII_ShutdownCB);
+    SYS_SetResetCallback((resetcallback)WII_ResetCB);
+    // TODO OGC_InitVideoSystem();// do that in SDL_VideoInit, *not* here!!
+    WPAD_SetDataFormat(WPAD_CHAN_ALL, WPAD_FMT_BTNS_ACC_IR);
+    WPAD_SetVRes(WPAD_CHAN_ALL, 640, 480);
+
+    MOUSE_Init();
+    KEYBOARD_Init(NULL);
+    /* why is this here? where do we use libfat? */
+    fatInitDefault();
+}
+
+/* vi: set ts=4 sw=4 expandtab: */

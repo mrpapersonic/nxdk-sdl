@@ -2893,6 +2893,11 @@ elseif(OGC)
   endif()
   set(SDLMAIN_SOURCES ${SDLMAIN_SOURCES} ${OGC_MAIN_SOURCES})
 
+  if (CMAKE_SYSTEM_NAME MATCHES "NintendoWii")
+    file(GLOB OGC_CORE_SOURCES ${SDL2_SOURCE_DIR}/src/core/wii/*.c)
+    list(APPEND SOURCE_FILES ${OGC_CORE_SOURCES})
+  endif()
+
   if(SDL_AUDIO)
     set(SDL_AUDIO_DRIVER_OGC 1)
     file(GLOB OGC_AUDIO_SOURCES ${SDL2_SOURCE_DIR}/src/audio/ogc/*.c)

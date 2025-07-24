@@ -34,6 +34,10 @@
 #endif
 #endif
 
+#if defined(__wii__)
+# include "core/wii/SDL_wii_core.h"
+#endif
+
 /* this checks for HAVE_DBUS_DBUS_H internally. */
 #include "core/linux/SDL_dbus.h"
 
@@ -177,6 +181,10 @@ int SDL_InitSubSystem(Uint32 flags)
 
     /* Clear the error message */
     SDL_ClearError();
+
+#ifdef __wii__
+    WII_Init();
+#endif
 
 #if SDL_USE_LIBDBUS
     SDL_DBus_Init();
